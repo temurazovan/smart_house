@@ -10,11 +10,11 @@
 
 
 enum Switchers {
-    LIGHTS_INSIDE = 0b00000001,
-    LIGHTS_OUTSIDE = 0b00000010,
-    HEATERS = 0b00000100,
+    LIGHTS_INSIDE      = 0b00000001,
+    LIGHTS_OUTSIDE     = 0b00000010,
+    HEATERS            = 0b00000100,
     WATER_PIPE_HEATING = 0b00001000,
-    CONDITIONER = 0b00010000,
+    CONDITIONER        = 0b00010000,
 };
 
 std::string timing(std::string time) {
@@ -32,12 +32,16 @@ std::string timing(std::string time) {
 
 int switchWaterPipe(int temperature, int homeDevicesState) {
     if (temperature < MIN_WATER_PIPE_TEMP) {
-        homeDevicesState |= WATER_PIPE_HEATING;
-        std::cout << "The water pipe is on!" << std::endl;
+        if (!(homeDevicesState & WATER_PIPE_HEATING)) {
+            homeDevicesState |= WATER_PIPE_HEATING;
+            std::cout << "The water pipe is on!" << std::endl;
+        }
     }
     if (temperature >= MAX_WATER_PIPE_TEMP) {
-        homeDevicesState |= ~WATER_PIPE_HEATING;
-        std::cout << "The water pipe is off!" << std::endl;
+        if (homeDevicesState & WATER_PIPE_HEATING) {
+            homeDevicesState &= ~WATER_PIPE_HEATING;
+            std::cout << "The water pipe is off!" << std::endl;
+        }
     }
 
     return homeDevicesState;
@@ -45,11 +49,15 @@ int switchWaterPipe(int temperature, int homeDevicesState) {
 
 int switchGardenLight(std::string time, std::string movement, int homeDevicesState) {
     if (((time[0] > '1' && time[1] > '6') || time[0] == '0' && time[1] < '5') && movement == "yes") {
-        homeDevicesState |= LIGHTS_OUTSIDE;
-        std::cout << "Garden light is on!" << std::endl;
+        if (!(homeDevicesState & LIGHTS_OUTSIDE)) {
+            homeDevicesState |= LIGHTS_OUTSIDE;
+            std::cout << "Garden light is on!" << std::endl;
+        }
     } else {
-        homeDevicesState |= ~LIGHTS_OUTSIDE;
-        std::cout << "Garden light is off!" << std::endl;
+        if (homeDevicesState & LIGHTS_OUTSIDE) {
+            homeDevicesState &= ~LIGHTS_OUTSIDE;
+            std::cout << "Garden light is off!" << std::endl;
+        }
     }
 
     return homeDevicesState;
@@ -57,11 +65,15 @@ int switchGardenLight(std::string time, std::string movement, int homeDevicesSta
 
 int switchHeaters(int temperatureInside, int homeDevicesState) {
     if (temperatureInside < HEATERS_TEMP) {
-        homeDevicesState |= HEATERS;
-        std::cout << "Heaters are on!" << std::endl;
+        if (!(homeDevicesState & HEATERS)) {
+            homeDevicesState |= HEATERS;
+            std::cout << "Heaters are on!" << std::endl;
+        }
     } else {
-        homeDevicesState |= ~HEATERS;
-        std::cout << "Heaters are off!" << std::endl;
+        if (homeDevicesState & HEATERS) {
+            homeDevicesState &= ~HEATERS;
+            std::cout << "Heaters are off!" << std::endl;
+        }
     }
 
     return homeDevicesState;
@@ -69,12 +81,16 @@ int switchHeaters(int temperatureInside, int homeDevicesState) {
 
 int switchConditioner(int temperatureInside, int homeDevicesState) {
     if (temperatureInside >= MAX_INSIDE_TEMP) {
-        homeDevicesState |= CONDITIONER;
-        std::cout << "Conditioner is on!" << std::endl;
+        if (!(homeDevicesState & CONDITIONER)) {
+            homeDevicesState |= CONDITIONER;
+            std::cout << "Conditioner is on!" << std::endl;
+        }
     }
     if (temperatureInside <= MIN_INSIDE_TEMP) {
-        homeDevicesState |= ~CONDITIONER;
-        std::cout << "Conditioner is off!" << std::endl;
+        if (homeDevicesState & CONDITIONER) {
+            homeDevicesState &= ~CONDITIONER;
+            std::cout << "Conditioner is off!" << std::endl;
+        }
     }
 
     return homeDevicesState;
@@ -82,16 +98,20 @@ int switchConditioner(int temperatureInside, int homeDevicesState) {
 
 int switchLightInside(int homeDeviceState, std::string input) {
     if (input == "yes" || input == "Yes") {
-        homeDeviceState |= LIGHTS_INSIDE;
+        if (!(homeDeviceState & LIGHTS_INSIDE)) {
+            homeDeviceState |= LIGHTS_INSIDE;
+        }
     } else {
-        homeDeviceState |= ~LIGHTS_INSIDE;
+        if (homeDeviceState & LIGHTS_INSIDE) {
+            homeDeviceState &= ~LIGHTS_INSIDE;
+        }
     }
     return homeDeviceState;
 }
 
 int colorTemperature(std::string time, int homeDeviceState, int counter) {
     int temp = TEMPERATURE_DIFFERENCE * counter;
-    if (homeDeviceState &= LIGHTS_INSIDE) {
+    if (homeDeviceState & LIGHTS_INSIDE) {
         if ((time[0] >= '1' && time[1] >= '6') && (time[0] <= '2' && time[1] == '0')) {
             std::cout << "Color temperature: " << temp << std::endl;
         } else {
@@ -103,7 +123,7 @@ int colorTemperature(std::string time, int homeDeviceState, int counter) {
 }
 
 int main() {
-    int homeDevicesState = 0b00000000;
+    int homeDevicesState = 0b0;
     std::string inputState;
     int temperatureInside, temperatureOutside;
     std::string movement, lightInside;
@@ -123,6 +143,7 @@ int main() {
         homeDevicesState = switchConditioner(temperatureInside, homeDevicesState);
         homeDevicesState = switchLightInside(homeDevicesState, lightInside);
         homeDevicesState = colorTemperature(time, homeDevicesState, colorCounter);
+
         if (colorCounter == 4) {
             colorCounter = 0;
         }
